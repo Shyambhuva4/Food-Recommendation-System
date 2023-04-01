@@ -24,13 +24,14 @@ cuisine = st.selectbox("Choose your favourite!",['Healthy Food', 'Snack', 'Desse
 st.subheader("How well do you want the dish to be?")  #RATING
 val = st.slider("from poor to the best!",0,10)
 
-food = pd.read_csv("input/food.csv")
-ratings = pd.read_csv("input/ratings.csv")
+food = pd.read_csv("food.csv")
+ratings = pd.read_csv("ratings.csv")
+rs=pd.read_csv('rs.csv')
 combined = pd.merge(ratings, food, on='Food_ID')
 #ans = food.loc[(food.C_Type == cuisine) & (food.Veg_Non == vegn),['Name','C_Type','Veg_Non']]
 
-ans = combined.loc[(combined.C_Type == cuisine) & (combined.Veg_Non == vegn)& (combined.Rating >= val),['Name','C_Type','Veg_Non']]
-names = ans['Name'].tolist()
+# ans = combined.loc[(combined.C_Type == cuisine) & (combined.Veg_Non == vegn)& (combined.Rating >= val),['Name','C_Type','Veg_Non']]
+names = rs['antecedents'].tolist()
 x = np.array(names)
 ans1 = np.unique(x)
 
@@ -41,31 +42,42 @@ if bruh == True:
 
 
 ##### IMPLEMENTING RECOMMENDER ######
-dataset = ratings.pivot_table(index='Food_ID',columns='User_ID',values='Rating')
-dataset.fillna(0,inplace=True)
-csr_dataset = csr_matrix(dataset.values)
-dataset.reset_index(inplace=True)
+# dataset = ratings.pivot_table(index='Food_ID',columns='User_ID',values='Rating')
+# dataset.fillna(0,inplace=True)
+# csr_dataset = csr_matrix(dataset.values)
+# dataset.reset_index(inplace=True)
 
-model = NearestNeighbors(metric='cosine', algorithm='brute', n_neighbors=20, n_jobs=-1)
-model.fit(csr_dataset)
+# model = NearestNeighbors(metric='cosine', algorithm='brute', n_neighbors=20, n_jobs=-1)
+# model.fit(csr_dataset)
 
 def food_recommendation(Food_Name):
-    n = 10
-    FoodList = food[food['Name'].str.contains(Food_Name)]  
-    if len(FoodList):        
-        Foodi= FoodList.iloc[0]['Food_ID']
-        Foodi = dataset[dataset['Food_ID'] == Foodi].index[0]
-        distances , indices = model.kneighbors(csr_dataset[Foodi],n_neighbors=n+1)    
-        Food_indices = sorted(list(zip(indices.squeeze().tolist(),distances.squeeze().tolist())),key=lambda x: x[1])[:0:-1]
-        Recommendations = []
-        for val in Food_indices:
-            Foodi = dataset.iloc[val[0]]['Food_ID']
-            i = food[food['Food_ID'] == Foodi].index
-            Recommendations.append({'Name':food.iloc[i]['Name'].values[0],'Distance':val[1]})
-        df = pd.DataFrame(Recommendations,index=range(1,n+1))
-        return df['Name']
-    else:
-        return "No Similar Foods."
+    # n = 10
+    # FoodList = food[food['Name'].str.contains(Food_Name)]  
+    # if len(FoodList):        
+    #     Foodi= FoodList.iloc[0]['Food_ID']
+    #     Foodi = dataset[dataset['Food_ID'] == Foodi].index[0]
+    #     distances , indices = model.kneighbors(csr_dataset[Foodi],n_neighbors=n+1)    
+    #     Food_indices = sorted(list(zip(indices.squeeze().tolist(),distances.squeeze().tolist())),key=lambda x: x[1])[:0:-1]
+    #     Recommendations = []
+    #     for val in Food_indices:
+    #         Foodi = dataset.iloc[val[0]]['Food_ID']
+    #         i = food[food['Food_ID'] == Foodi].index
+    #         Recommendations.append({'Name':food.iloc[i]['Name'].values[0],'Distance':val[1]})
+    #     df = pd.DataFrame(Recommendations,index=range(1,n+1))
+    #     return df['Name']
+     recommend=[]  
+
+     for i in range(len(rs)):
+      if Food_Name==(rs["antecedents"][i]) :
+        recommend.append(rs.iloc[i]["consequents"])
+     
+     
+     if recommend:
+            try:
+               return recommend[:val]
+            except: return recommend
+     else:recommend="No similar items found"
+ 
 
 
 display = food_recommendation(finallist)
